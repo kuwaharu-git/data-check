@@ -7,11 +7,10 @@ Data Checker for CSV and Excel Files
 - 異常値チェック
 """
 
-import os
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from typing import Dict, List, Tuple, Union
+from typing import Dict
 import json
 
 
@@ -180,11 +179,14 @@ def check_outliers(df: pd.DataFrame, threshold: float = 3.0) -> Dict[str, Dict]:
                 std = non_null_series.std()
                 
                 if std > 0:
-                    z_scores = np.abs((df[column] - mean) / std)
+                    # Null値を除外したデータに対してZスコアを計算
+                    z_scores = np.abs((non_null_series - mean) / std)
                     outlier_mask = z_scores > threshold
                     outlier_count = outlier_mask.sum()
+                    
+                    # 元のDataFrameでの行インデックスを取得
+                    outlier_indices = non_null_series[outlier_mask].index.tolist()
                     outlier_ratio = outlier_count / len(df) if len(df) > 0 else 0
-                    outlier_indices = df[outlier_mask].index.tolist()
                     
                     result[column] = {
                         'outlier_count': int(outlier_count),
